@@ -42,7 +42,6 @@ import gempy_viewer as gpv
 from gempy_engine.core.data.stack_relation_type import StackRelationType
 import pyvista as pv
 import numpy as np
-from gempy_engine.config import AvailableBackends
 
 class create_gempy_model(object):
 
@@ -58,16 +57,6 @@ class create_gempy_model(object):
         #Keyword Args assingment
             self.data_path = kwargs.get('data_path')   # eg.. 'https://raw.githubusercontent.com/cgre-aachen/gempy_data/master/'
             self.project_name = kwargs.get('model_name')  # This is the project name
-            self.gempy_backend = kwargs.get('gempy_backend')
-            if self.gempy_backend == None:
-                self.gempy_backend = AvailableBackends.PYTORCH
-            elif self.gempy_backend == "PYTORCH":
-                self.gempy_backend = AvailableBackends.PYTORCH
-            elif self.gempy_backend == 'numpy':
-                self.gempy_backend = AvailableBackends.numpy
-            else:
-                self.gempy_backend = AvailableBackends.PYTORCH
-
             if self.project_name == '':
                 self.project_name = 'No_Name'
     
@@ -127,16 +116,15 @@ class create_gempy_model(object):
         # Compute the geological model with the model inputs and return to object
         
         #return gp.compute_model(self.data)
-        gp.compute_model(self.data, engine_config=gp.data.GemPyEngineConfig(
-        backend=AvailableBackends.PYTORCH))
+        gp.compute_model(self.data)
         self.geo_data = self.data
         return self.geo_data
     
     def return_3d_plot_inputs(self, show_data=True, show_boundaries=True, show_lith=False, kwargs_notebook_plotter=True):
         return gpv.plot_3d(self.data, show_data=show_data, show_boundaries=show_boundaries, show_lith=show_lith, kwargs_plotter={'notebook' : kwargs_notebook_plotter})
 
-    #def return_structural_frame(self):
-    #    return self.data.structural_frame
+
+
 
 def return_mesh_from_gempy(geo_model, surface):
     """Gather vertices and faces to create polydata sets for meshing"""
@@ -162,4 +150,3 @@ def return_mesh_from_gempy(geo_model, surface):
     mesh['Depth [m]'] = mesh.points[:, 2]
 
     return mesh
-
