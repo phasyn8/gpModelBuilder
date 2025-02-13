@@ -128,7 +128,7 @@ class create_gempy_model(object):
         
         #return gp.compute_model(self.data)
         gp.compute_model(self.data, engine_config=gp.data.GemPyEngineConfig(
-        backend=AvailableBackends.PYTORCH))
+        backend=self.gempy_backend))
         self.geo_data = self.data
         return self.geo_data
     
