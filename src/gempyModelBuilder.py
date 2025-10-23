@@ -18,10 +18,11 @@ Parameters:
     project_name: [str] to set model metadata
     **kwargs: [TODO, pass kwargs to gempy_viewer class]
     
+
     kwargs:
-        model_name: [string] desired model name
-        data_path: [string] path to the input csv surface or orientation files
-        
+        model_name: [str] desired model name
+        data_path: [str] path to the input csv surface or orientation files
+        topography: [str] path to " gempy.set_topography_from_file() " compatible file (like a GeoTIFF)  
 """
 
 
@@ -59,6 +60,10 @@ class create_gempy_model(object):
             self.data_path = kwargs.get('data_path')   # eg.. 'https://raw.githubusercontent.com/cgre-aachen/gempy_data/master/'
             self.project_name = kwargs.get('model_name')  # This is the project name
             self.gempy_backend = kwargs.get('gempy_backend')
+            self.topography = kwargs.get('topography')
+            self.chunk_size = kwargs.get('chunk_size')
+            self.range_scaler = kwargs.get('range_scaler')
+
             if self.gempy_backend == None:
                 self.gempy_backend = AvailableBackends.PYTORCH
             elif self.gempy_backend == "PYTORCH":
@@ -70,6 +75,14 @@ class create_gempy_model(object):
 
             if self.project_name == '':
                 self.project_name = 'No_Name'
+
+            if self.chunk_size == None:
+                self.chunk_size = 50_000
+            
+            if self.range_scaler == None:
+                self.range_scaler = 1
+
+
     
         #Required arguments 
             self.surface_points = data_path + surface_points
@@ -105,8 +118,8 @@ class create_gempy_model(object):
         # Set Fault relationships
             data.structural_frame.fault_relations = fault_relations
             
-            
-            
+            if self.topography != None:
+                gp.set_topography_from_file(grid=data.grid, filepath=self.topography)
                                 
             #data.structural_frame.structural_groups[0].structural_relation = StackRelationType.FAULT
             #data.structural_frame.fault_relations = np.array([[0,0,0,1], [0,0,0,1],[0,0,0,1],[0,0,0,0]])
@@ -127,16 +140,18 @@ class create_gempy_model(object):
         # Compute the geological model with the model inputs and return to object
         
         #return gp.compute_model(self.data)
+        self.data.interpolation_options.kernel_options.range *= self.range_scaler
+        self.data.interpolation_options.evaluation_options.evaluation_chunk_size = self.chunk_size
         gp.compute_model(self.data, engine_config=gp.data.GemPyEngineConfig(
-        backend=self.gempy_backend))
+        backend=self.gempy_backend, dtype='float64'))
         self.geo_data = self.data
         return self.geo_data
     
     def return_3d_plot_inputs(self, show_data=True, show_boundaries=True, show_lith=False, kwargs_notebook_plotter=True):
         return gpv.plot_3d(self.data, show_data=show_data, show_boundaries=show_boundaries, show_lith=show_lith, kwargs_plotter={'notebook' : kwargs_notebook_plotter})
 
-    #def return_structural_frame(self):
-    #    return self.data.structural_frame
+    def return_structural_frame(self):
+        return self.data.structural_frame
 
 def return_mesh_from_gempy(geo_model, surface):
     """Gather vertices and faces to create polydata sets for meshing"""
